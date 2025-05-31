@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Pit</title>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js "></script>
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons " rel="stylesheet">
+
+  <style>
+    :root {
+      --btn-size: 50px;
+      --icon-color: white;
+      --icon-inactive: rgba(255, 255, 255, 0.5);
+      --transition-time: 0.2s;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      background: url('https://i.postimg.cc/6Qc1C6KG/IMG-2162.jpg ') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+
+    /* Кнопка закрытия */
+    .top-left-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      user-select: none;
+      z-index: 3000;
+    }
+
+    /* Панель в правом верхнем углу */
+    .top-right-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 3000;
+      font-size: 14px;
+      text-shadow: 1px 1px 3px #000;
+    }
+
+    .status-icon,
+    .profile-icon {
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      font-size: 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .status-icon .material-icons,
+    .profile-icon .material-icons {
+      font-size: 20px;
+      color: white;
+    }
+
+    .balance-text {
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* TAP TO SEARCH */
+    .tap-to-start {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2999;
+      text-align: center;
+      pointer-events: auto;
+    }
+
+    .tap-to-start p {
+      font-size: 24px;
+      text-shadow: 1px 1px 3px black;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Панель управления */
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 20px;
+      z-index: 3000;
+    }
+
+    .control-btn {
+      width: var(--btn-size);
+      height: var(--btn-size);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .control-btn .material-icons {
+      font-size: 24px;
+      color: var(--icon-color);
+      transition: all var(--transition-time) ease;
+    }
+
+    .control-btn.inactive .material-icons {
+      color: var(--icon-inactive);
+    }
+
+    .control-btn:hover .material-icons {
+      transform: scale(1.1);
+    }
+
+    .control-btn:active .material-icons {
+      transform: scale(0.95);
+    }
+
+    /* Регулятор громкости */
+    .volume-modal {
+      position: fixed;
+      bottom: auto;
+      left: 50%;
+      transform: translateX(-50%);
+      background: transparent;
+      border: none;
+      padding: 0;
+      z-index: 3000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .slider {
+      width: 100%;
+      height: 8px;
+      background: #aaa;
+      appearance: none;
+      outline: none;
+      margin-top: 10px;
+    }
+
+    .slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    /* Модальные окна */
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      border: 3px solid white;
+      border-radius: 0;
+      width: 90%;
+      max-width: 300px;
+      box-sizing: border-box;
+      z-index: 3000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal button {
+      margin-top: 10px;
+      border: 3px solid white;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      outline: none;
+      border-radius: 0;
+    }
+
+    .modal input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 2px solid white;
+      background: black;
+      color: white;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    /* Уведомления */
+    .notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid white;
+      padding: 15px 25px;
+      z-index: 3001;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      color: white;
+      text-transform: uppercase;
+      font-weight: bold;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Видео -->
+  <video id="remoteVideo" autoplay playsinline></video>
+  <video id="localVideo" autoplay muted playsinline></video>
+  <div class="overlay"></div>
+
+  <!-- Кнопка закрытия -->
+  <button class="top-left-btn" onclick="goBack()">×</button>
+
+  <!-- TAP TO START -->
+  <div class="tap-to-start" id="tapToStart">
+    <p>TAP TO SEARCH</p>
+  </div>
+
+  <!-- Панель в правом верхнем углу -->
+  <div class="top-right-panel">
+    <!-- Баланс эмбер -->
+    <span class="balance-text" id="balanceDisplay">—</span>
+
+    <!-- Статус собеседника -->
+    <div class="status-icon" title="Receiver Status" id="receiverStatusIcon"></div>
+
+    <!-- Профиль пользователя -->
+    <div class="profile-icon" title="Profile" onclick="openProfileModal()">
+      <span class="material-icons">person_outline</span>
+    </div>
+  </div>
+
+  <!-- Панель управления -->
+  <div class="controls" id="controls">
+    <button class="control-btn" id="switchCameraBtn" title="Камера">
+      <span class="material-icons">camera_alt</span>
+    </button>
+
+    <button class="control-btn" id="toggleMicBtn" title="Микрофон">
+      <span class="material-icons">mic</span>
+    </button>
+
+    <button class="control-btn" id="volumeSliderBtn" title="Громкость">
+      <span class="material-icons">volume_up</span>
+    </button>
+
+    <button class="control-btn" id="connectBtn" title="Соединение">
+      <span class="material-icons">power</span>
+    </button>
+
+    <button class="control-btn inactive" id="sendEmberBtn" disabled title="Send Ember">
+      <span class="material-icons">diamond</span>
+    </button>
+  </div>
+
+  <!-- Модальное окно профиля -->
+  <div class="modal" id="profileModal">
+    <button class="close-btn" onclick="closeProfileModal()">&times;</button>
+    <p>Профиль</p>
+    <input type="text" placeholder="Имя" value="User123" disabled />
+    <button onclick="closeProfileModal()">ОК</button>
+  </div>
+
+  <!-- Модальное окно отправки эмбер -->
+  <div class="modal" id="sendModal">
+    <button class="close-btn" onclick="closeSendModal()">&times;</button>
+    <p>SEND EMBER</p>
+    <input type="number" id="emberAmountInput" placeholder="Количество" min="1" />
+    <button onclick="sendEmber()">ОТПРАВИТЬ</button>
+  </div>
+
+  <!-- Модальное окно регулятора громкости -->
+  <div class="volume-modal" id="volumeModal">
+    <p>Громкость</p>
+    <input type="range" min="0" max="100" value="50" id="volumeSlider" class="slider" />
+  </div>
+
+  <!-- Уведомление -->
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.expand();
+
+    // Элементы
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+
+    const switchCameraBtn = document.getElementById('switchCameraBtn');
+    const toggleMicBtn = document.getElementById('toggleMicBtn');
+    const volumeSliderBtn = document.getElementById('volumeSliderBtn');
+    const connectBtn = document.getElementById('connectBtn');
+    const sendEmberBtn = document.getElementById('sendEmberBtn');
+    const balanceDisplay = document.getElementById('balanceDisplay');
+    const receiverStatusIcon = document.getElementById('receiverStatusIcon');
+    const tapToStart = document.getElementById('tapToStart');
+    const controls = document.getElementById('controls');
+    const notification = document.getElementById('notification');
+
+    const profileModal = document.getElementById('profileModal');
+    const sendModal = document.getElementById('sendModal');
+    const volumeModal = document.getElementById('volumeModal');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const emberAmountInput = document.getElementById('emberAmountInput');
+
+    // Состояния
+    let emberBalance = 100;
+    let isMicEnabled = true;
+    let currentCamera = 'user';
+    let isSearching = false;
+    let isReceiverBlink = false;
+    let localStream = null;
+    let peerConnection = null;
+    let ws = null;
+
+    function haptic(feedback = 'light') {
+      if (!tg || !tg.HapticFeedback) return;
+      try {
+        tg.HapticFeedback.impactOccurred(feedback);
+      } catch (e) {
+        console.warn("Haptic Feedback недоступен");
+      }
+    }
+
+    // --- Запрос доступа к камере и микрофону ---
+    document.body.addEventListener('click', async () => {
+      if (localStream) return; // уже есть поток
+      haptic('heavy');
+      requestMediaAccess();
+    });
+
+    async function requestMediaAccess() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        localVideo.srcObject = localStream;
+
+        // Скрываем текст "TAP TO SEARCH"
+        tapToStart.style.display = 'none';
+
+        // Отображаем панель управления
+        controls.style.display = 'flex';
+
+        // Подключаемся к WSS
+        initSignaling();
+
+        // Настройка WebRTC
+        setupPeerConnection();
+      } catch (err) {
+        alert("Не удалось получить доступ к камере или микрофону");
+        console.error("Ошибка getUserMedia:", err);
+      }
+    }
+
+    // --- WSS (WebSocket Secure) ---
+    function initSignaling() {
+      ws = new WebSocket("wss://ваш.домен:8080");
+
+      ws.onopen = () => {
+        console.log("Подключено к WSS-серверу");
+      };
+
+      ws.onmessage = async (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'offer' && !peerConnection) {
+          await setupPeerConnection();
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+          const answer = await peerConnection.createAnswer();
+          await peerConnection.setLocalDescription(answer);
+          ws.send(JSON.stringify({ type: 'answer', answer: answer }));
+        }
+
+        if (data.type === 'answer' && peerConnection) {
+          await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        }
+
+        if (data.type === 'candidate' && peerConnection) {
+          await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        }
+
+        if (data.type === 'disconnect' && peerConnection) {
+          peerConnection.close();
+          peerConnection = null;
+          remoteVideo.srcObject = null;
+        }
+      };
+    }
+
+    // --- WebRTC ---
+    function setupPeerConnection() {
+      const configuration = { iceServers: [] }; // Можно добавить STUN/TURN
+      peerConnection = new RTCPeerConnection(configuration);
+
+      // Локальный поток
+      localStream.getTracks().forEach(track => {
+        peerConnection.addTrack(track, localStream);
+      });
+
+      // Получаем удаленный поток
+      peerConnection.ontrack = event => {
+        const stream = event.streams[0];
+        remoteVideo.srcObject = stream;
+      };
+
+      // ICE кандидаты
+      peerConnection.onicecandidate = e => {
+        if (e.candidate) {
+          ws.send(JSON.stringify({ type: 'candidate', candidate: e.candidate }));
+        }
+      };
+    }
+
+    // --- Переключение / выключение камеры ---
+    let longPressTimer = null;
+    let isCameraEnabled = true;
+
+    switchCameraBtn.addEventListener('mousedown', () => {
+      longPressTimer = setTimeout(() => {
+        isCameraEnabled = false;
+        pauseCamera();
+        switchCameraBtn.classList.add('inactive');
+      }, 2000);
+    });
+
+    switchCameraBtn.addEventListener('mouseup', () => clearTimeout(longPressTimer));
+    switchCameraBtn.addEventListener('mouseleave', () => clearTimeout(longPressTimer));
+
+    switchCameraBtn.addEventListener('click', async () => {
+      if (!isCameraEnabled) {
+        resumeCamera();
+        isCameraEnabled = true;
+        switchCameraBtn.classList.remove('inactive');
+      } else {
+        currentCamera = currentCamera === 'user' ? 'environment' : 'user';
+        const videoTrack = await getNewVideoTrack(currentCamera);
+        const sender = peerConnection.getSenders().find(s => s.track?.kind === 'video');
+        if (sender) sender.replaceTrack(videoTrack);
+      }
+    });
+
+    async function getNewVideoTrack(facingMode) {
+      const newStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode },
+        audio: false
+      });
+      return newStream.getVideoTracks()[0];
+    }
+
+    function pauseCamera() {
+      const tracks = localStream.getVideoTracks();
+      tracks.forEach(track => track.enabled = false);
+    }
+
+    function resumeCamera() {
+      const tracks = localStream.getVideoTracks();
+      tracks.forEach(track => track.enabled = true);
+    }
+
+    // --- Управление микрофоном ---
+    toggleMicBtn.addEventListener('click', () => {
+      haptic('light');
+      const tracks = localStream.getAudioTracks();
+      isMicEnabled = !isMicEnabled;
+      tracks.forEach(track => track.enabled = isMicEnabled);
+      toggleMicBtn.classList.toggle('inactive', !isMicEnabled);
+    });
+
+    // --- Регулятор громкости ---
+    volumeSliderBtn.addEventListener('click', (e) => {
+      haptic('light');
+      const rect = e.target.getBoundingClientRect();
+      volumeModal.style.bottom = `${window.innerHeight - rect.top + 40}px`;
+      volumeModal.style.left = `${rect.left + rect.width / 2}px`;
+      volumeModal.style.transform = `translateX(-50%)`;
+      volumeModal.style.display = 'flex';
+    });
+
+    document.addEventListener('click', (e) => {
+      if (
+        !volumeModal.contains(e.target) &&
+        e.target !== volumeSliderBtn &&
+        !volumeSliderBtn.contains(e.target)
+      ) {
+        volumeModal.style.display = 'none';
+      }
+    });
+
+    // --- Поиск собеседника ---
+    connectBtn.addEventListener('click', () => {
+      haptic('heavy');
+      isSearching = !isSearching;
+      connectBtn.querySelector('.material-icons').textContent = isSearching ? 'power_settings_new' : 'power';
+      if (isSearching) startSearch();
+      else stopSearch();
+    });
+
+    async function startSearch() {
+      simulateRandomUser(); // мок-имитация
+      showNotification("Поиск...");
+      setTimeout(() => {
+        showNotification("Найдено!");
+        createOfferAndConnect();
+      }, 1500);
+    }
+
+    function stopSearch() {
+      remoteVideo.srcObject = null;
+      if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+      }
+      showNotification("Завершено");
+    }
+
+    // --- Создание offer ---
+    async function createOfferAndConnect() {
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+      ws.send(JSON.stringify({ type: 'offer', offer: offer }));
+    }
+
+    // --- Свайп для сброса ---
+    let startX = 0;
+
+    document.body.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+    });
+
+    document.body.addEventListener('touchend', e => {
+      const endX = e.changedTouches[0].clientX;
+      if (endX < startX - 50) simulateRandomUser();
+    });
+
+    // --- Случайный пользователь (мок) ---
+    function simulateRandomUser() {
+      isReceiverBlink = Math.random() < 0.3;
+      sendEmberBtn.disabled = !isReceiverBlink;
+      sendEmberBtn.classList.toggle('inactive', !isReceiverBlink);
+      receiverStatusIcon.innerHTML = isReceiverBlink ? '<span class="material-icons">diamond</span>' : '';
+    }
+
+    // --- Отправка Ember ---
+    sendEmberBtn.addEventListener('click', () => {
+      if (!isReceiverBlink) return;
+      haptic('light');
+      sendModal.style.display = 'flex';
+    });
+
+    function closeSendModal() {
+      sendModal.style.display = 'none';
+      emberAmountInput.value = '';
+    }
+
+    function sendEmber() {
+      const amount = parseInt(emberAmountInput.value);
+      if (isNaN(amount) || amount <= 0 || emberBalance < amount) {
+        showNotification("Ошибка");
+        return;
+      }
+
+      emberBalance -= amount;
+      localStorage.setItem('ember_balance', emberBalance);
+      updateBalanceDisplay();
+      closeSendModal();
+      showNotification(`+${amount} EMBER`);
+    }
+
+    function updateBalanceDisplay() {
+      balanceDisplay.textContent = `${Math.floor(emberBalance)} EMBER`;
+    }
+
+    updateBalanceDisplay();
+
+    // --- Уведомления ---
+    function showNotification(message) {
+      notification.innerText = message;
+      notification.style.opacity = '1';
+      setTimeout(() => {
+        notification.style.opacity = '0';
+      }, 1000);
+    }
+
+    // --- Возврат на главную ---
+    function goBack() {
+      if (peerConnection) peerConnection.close();
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
+      if (ws) ws.close();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

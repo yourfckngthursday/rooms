@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ember</title>
+
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js "></script>
+
+  <style>
+    :root {
+      --accent-color: white;
+      --bg-overlay: rgba(0, 0, 0, 0.7);
+      --transition-time: 0.2s;
+    }
+
+    body.dark {
+      background: var(--bg-overlay);
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+
+      /* --- Фон как на index.html --- */
+      background: url('https://i.postimg.cc/6Qc1C6KG/IMG-2162.jpg ') no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden;
+      position: relative;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      color: white;
+      font-weight: bold;
+      font-size: 24px;
+      text-align: center;
+      line-height: 36px;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      z-index: 1000;
+      user-select: none;
+      transition: transform 0.2s ease;
+    }
+
+    .close-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .close-btn:active {
+      transform: scale(0.95);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      z-index: 1;
+    }
+
+    .balance-info {
+      text-align: center;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+      margin-bottom: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .balance-info.show {
+      opacity: 1;
+    }
+
+    .balance-info p {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 250px;
+      border: 3px solid white;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+      border-radius: 0;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    .btn.visible {
+      animation: fadeInUp 1s forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .btn:hover {
+      transform: translateX(-5px);
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
+    }
+
+    .btn:active {
+      transform: translateX(-5px) scale(0.95);
+    }
+
+    .wallet-address {
+      margin-top: 15px;
+      font-size: 14px;
+      opacity: 0.7;
+      text-align: center;
+      word-break: break-all;
+    }
+
+    .notification {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid white;
+      padding: 15px 25px;
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+      text-transform: uppercase;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Кнопка закрытия -->
+  <div class="close-btn" onclick="window.location.href='index.html'">&times;</div>
+
+  <!-- Основной контейнер -->
+  <div class="container">
+
+    <!-- Баланс Ember -->
+    <div class="balance-info" id="balanceInfo">
+      <p id="emberBalance">EMBER</p>
+    </div>
+
+    <!-- Кнопка Access -->
+    <button id="accessBtn" class="btn visible">ACCESS</button>
+
+    <!-- Блок обмена -->
+    <div id="exchangeBlock">
+      <button class="btn" data-amount="10">10 EMBER</button>
+      <button class="btn" data-amount="100">100 EMBER</button>
+      <button class="btn" data-amount="1000">1000 EMBER</button>
+    </div>
+
+    <!-- Индикатор подключённого кошелька -->
+    <div class="wallet-address" id="walletAddressDisplay"></div>
+
+    <!-- Кнопка отключения кошелька -->
+    <button id="disconnectBtn" class="btn hidden">DISCONNECT WALLET</button>
+
+  </div>
+
+  <!-- Уведомление -->
+  <div id="notification" class="notification hidden" role="alert"></div>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) tg.expand();
+
+    // Элементы
+    const accessBtn = document.getElementById('accessBtn');
+    const exchangeBlock = document.getElementById('exchangeBlock');
+    const emberBalanceEl = document.getElementById('emberBalance');
+    const balanceInfo = document.getElementById('balanceInfo');
+    const walletAddressDisplay = document.getElementById('walletAddressDisplay');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const notification = document.getElementById('notification');
+
+    // Проверяем состояние
+    const hasAccess = localStorage.getItem('ember_access_granted') === 'true';
+    const walletConnected = localStorage.getItem('wallet_connected') === 'true';
+
+    if (hasAccess && walletConnected) {
+      updateUIAfterConnect();
+    } else {
+      updateUIBeforeConnect();
+    }
+
+    function updateUIBeforeConnect() {
+      accessBtn.classList.remove('hidden');
+      accessBtn.classList.add('visible');
+      exchangeBlock.style.display = 'none';
+      disconnectBtn.classList.add('hidden');
+      emberBalanceEl.textContent = '';
+      balanceInfo.classList.remove('show');
+      walletAddressDisplay.textContent = '';
+    }
+
+    function updateUIAfterConnect() {
+      accessBtn.classList.add('hidden');
+      exchangeBlock.style.display = 'flex';
+      exchangeBlock.style.flexDirection = 'column';
+      exchangeBlock.style.gap = '10px';
+      disconnectBtn.classList.remove('hidden');
+      setTimeout(() => {
+        document.querySelectorAll('.btn').forEach(btn => btn.classList.add('visible'));
+      }, 100);
+      walletAddressDisplay.textContent = localStorage.getItem('wallet_address') || '';
+      updateEmberBalanceUI();
+      balanceInfo.classList.add('show');
+    }
+
+    // --- Функции ---
+    function haptic(feedback = 'light') {
+      if (!tg || !tg.HapticFeedback) return;
+      tg.HapticFeedback.impactOccurred(feedback);
+    }
+
+    function showNotification(message) {
+      notification.textContent = message;
+      notification.classList.remove('hidden');
+      notification.style.opacity = '1';
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.classList.add('hidden'), 300);
+      }, 1000);
+    }
+
+    function getEmberBalance() {
+      return parseFloat(localStorage.getItem('ember_balance')) || 0;
+    }
+
+    function updateEmberBalanceUI() {
+      emberBalanceEl.textContent = `${getEmberBalance().toFixed(2)} EMBER`;
+    }
+
+    function grantAccessAndConnectWallet(mockAddress) {
+      localStorage.setItem('ember_access_granted', 'true');
+      localStorage.setItem('wallet_connected', 'true');
+      localStorage.setItem('wallet_address', mockAddress);
+      localStorage.setItem('ember_balance', 10);
+
+      updateUIAfterConnect();
+      walletAddressDisplay.textContent = mockAddress;
+      updateEmberBalanceUI();
+      showNotification("ACCESS GRANTED");
+    }
+
+    function disconnectWallet() {
+      localStorage.removeItem('ember_access_granted');
+      localStorage.removeItem('wallet_connected');
+      localStorage.removeItem('wallet_address');
+      localStorage.removeItem('ember_balance');
+
+      updateUIBeforeConnect();
+      showNotification("WALLET DISCONNECTED");
+    }
+
+    function buyEmber(amount) {
+      let current = getEmberBalance();
+      current += amount;
+      localStorage.setItem('ember_balance', current);
+      updateEmberBalanceUI();
+      showNotification(`+${amount} EMBER ADDED`);
+    }
+
+    // --- Event Listeners ---
+    accessBtn.addEventListener('click', () => {
+      haptic('heavy');
+      showNotification("PROCESSING ACCESS...");
+
+      setTimeout(() => {
+        const mockAddress = "0x" + Math.random().toString(16).substr(2, 40);
+        grantAccessAndConnectWallet(mockAddress);
+      }, 1000);
+    });
+
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = parseInt(btn.dataset.amount);
+        if (amount) {
+          haptic('light');
+          buyEmber(amount);
+        }
+      });
+    });
+
+    disconnectBtn.addEventListener('click', () => {
+      haptic('heavy');
+      disconnectWallet();
+    });
+
+    // --- Темная тема ---
+    if (tg && tg.colorScheme === 'dark') {
+      document.body.classList.add('dark');
+    }
+  </script>
+</body>
+</html>
