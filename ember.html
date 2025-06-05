@@ -4,28 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Ember</title>
-
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js "></script>
-
+  <script src="https://telegram.org/js/telegram-web-app.js"></script> 
+  <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/umd/tonconnect-sdk.min.js"></script> 
   <style>
     :root {
       --accent-color: white;
       --bg-overlay: rgba(0, 0, 0, 0.7);
       --transition-time: 0.2s;
     }
-
     body.dark {
       background: var(--bg-overlay);
     }
-
     body {
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
-
-      /* --- Фон как на index.html --- */
-      background: url('https://i.postimg.cc/6Qc1C6KG/IMG-2162.jpg ') no-repeat center center fixed;
+      background: url('https://i.postimg.cc/6Qc1C6KG/IMG-2162.jpg')  no-repeat center center fixed;
       background-size: cover;
       overflow: hidden;
       position: relative;
@@ -35,7 +29,6 @@
       justify-content: center;
       min-height: 100vh;
     }
-
     .close-btn {
       position: absolute;
       top: 20px;
@@ -55,15 +48,12 @@
       user-select: none;
       transition: transform 0.2s ease;
     }
-
     .close-btn:hover {
       transform: scale(1.1);
     }
-
     .close-btn:active {
       transform: scale(0.95);
     }
-
     .container {
       width: 100%;
       max-width: 400px;
@@ -75,7 +65,6 @@
       gap: 10px;
       z-index: 1;
     }
-
     .balance-info {
       text-align: center;
       font-weight: bold;
@@ -86,16 +75,13 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-
     .balance-info.show {
       opacity: 1;
     }
-
     .balance-info p {
       margin: 0;
       font-size: 24px;
     }
-
     .btn {
       width: 100%;
       max-width: 250px;
@@ -112,35 +98,52 @@
       transition: all 0.2s ease;
       border-radius: 0;
       text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-
       opacity: 0;
       transform: translateY(10px);
     }
-
     .btn.visible {
       animation: fadeInUp 1s forwards;
     }
-
     @keyframes fadeInUp {
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
-
     .btn:hover {
       transform: translateX(-5px);
       text-shadow: 0 0 10px rgba(255, 255, 255, 0.9);
     }
-
     .btn:active {
       transform: translateX(-5px) scale(0.95);
     }
-
+    .small-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      font-size: 12px;
+      padding: 6px 10px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s ease;
+      border-radius: 0;
+      flex-shrink: 0;
+    }
+    .small-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .small-btn:active {
+      transform: scale(0.95);
+    }
+    .exchange-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
     .wallet-address {
       margin-top: 15px;
       font-size: 14px;
@@ -148,7 +151,6 @@
       text-align: center;
       word-break: break-all;
     }
-
     .notification {
       position: fixed;
       top: 50%;
@@ -166,52 +168,50 @@
       text-transform: uppercase;
       font-weight: bold;
     }
-
     .hidden {
       display: none !important;
     }
   </style>
 </head>
-
 <body>
-
-  <!-- Кнопка закрытия -->
   <div class="close-btn" onclick="window.location.href='index.html'">&times;</div>
-
-  <!-- Основной контейнер -->
   <div class="container">
-
-    <!-- Баланс Ember -->
     <div class="balance-info" id="balanceInfo">
       <p id="emberBalance">EMBER</p>
     </div>
-
-    <!-- Кнопка Access -->
     <button id="accessBtn" class="btn visible">ACCESS</button>
-
-    <!-- Блок обмена -->
     <div id="exchangeBlock">
-      <button class="btn" data-amount="10">10 EMBER</button>
-      <button class="btn" data-amount="100">100 EMBER</button>
-      <button class="btn" data-amount="1000">1000 EMBER</button>
+      <div class="exchange-row">
+        <button class="btn" data-amount="10">10 EMBER</button>
+        <button class="small-btn ton" data-amount="10">TON</button>
+        <button class="small-btn usdt" data-amount="10">USDT</button>
+      </div>
+      <div class="exchange-row">
+        <button class="btn" data-amount="100">100 EMBER</button>
+        <button class="small-btn ton" data-amount="100">TON</button>
+        <button class="small-btn usdt" data-amount="100">USDT</button>
+      </div>
+      <div class="exchange-row">
+        <button class="btn" data-amount="1000">1000 EMBER</button>
+        <button class="small-btn ton" data-amount="1000">TON</button>
+        <button class="small-btn usdt" data-amount="1000">USDT</button>
+      </div>
     </div>
-
-    <!-- Индикатор подключённого кошелька -->
     <div class="wallet-address" id="walletAddressDisplay"></div>
-
-    <!-- Кнопка отключения кошелька -->
     <button id="disconnectBtn" class="btn hidden">DISCONNECT WALLET</button>
-
   </div>
-
-  <!-- Уведомление -->
   <div id="notification" class="notification hidden" role="alert"></div>
 
   <script>
     const tg = window.Telegram?.WebApp;
     if (tg) tg.expand();
 
-    // Элементы
+    const telegramUser = JSON.parse(localStorage.getItem('telegram_user'));
+    if (!telegramUser) {
+      alert("Доступ запрещён: вы не авторизованы");
+      window.location.href = 'index.html';
+    }
+
     const accessBtn = document.getElementById('accessBtn');
     const exchangeBlock = document.getElementById('exchangeBlock');
     const emberBalanceEl = document.getElementById('emberBalance');
@@ -220,7 +220,6 @@
     const disconnectBtn = document.getElementById('disconnectBtn');
     const notification = document.getElementById('notification');
 
-    // Проверяем состояние
     const hasAccess = localStorage.getItem('ember_access_granted') === 'true';
     const walletConnected = localStorage.getItem('wallet_connected') === 'true';
 
@@ -254,7 +253,6 @@
       balanceInfo.classList.add('show');
     }
 
-    // --- Функции ---
     function haptic(feedback = 'light') {
       if (!tg || !tg.HapticFeedback) return;
       tg.HapticFeedback.impactOccurred(feedback);
@@ -278,26 +276,42 @@
       emberBalanceEl.textContent = `${getEmberBalance().toFixed(2)} EMBER`;
     }
 
-    function grantAccessAndConnectWallet(mockAddress) {
-      localStorage.setItem('ember_access_granted', 'true');
-      localStorage.setItem('wallet_connected', 'true');
-      localStorage.setItem('wallet_address', mockAddress);
-      localStorage.setItem('ember_balance', 10);
+    async function grantAccessAndConnectWallet() {
+      const connector = new tonconnect_sdk.TonConnect();
+      const connectRequest = await connector.connect({
+        bridgeUrl: 'https://bridge.tonapi.io/bridge', 
+        manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json' 
+      });
 
-      updateUIAfterConnect();
-      walletAddressDisplay.textContent = mockAddress;
-      updateEmberBalanceUI();
-      showNotification("ACCESS GRANTED");
+      const walletInfo = await connector.walletInfo();
+
+      if (walletInfo && walletInfo.account.address) {
+        localStorage.setItem('wallet_connected', 'true');
+        localStorage.setItem('wallet_address', walletInfo.account.address);
+        localStorage.setItem('ember_balance', 10);
+        updateUIAfterConnect();
+        walletAddressDisplay.textContent = walletInfo.account.address;
+        updateEmberBalanceUI();
+        showNotification("ACCESS GRANTED");
+      }
     }
 
     function disconnectWallet() {
-      localStorage.removeItem('ember_access_granted');
       localStorage.removeItem('wallet_connected');
       localStorage.removeItem('wallet_address');
       localStorage.removeItem('ember_balance');
-
       updateUIBeforeConnect();
       showNotification("WALLET DISCONNECTED");
+    }
+
+    function buyWithTon(amount) {
+      showNotification(`BUYING ${amount} EMBER WITH TON`);
+      buyEmber(amount);
+    }
+
+    function buyWithUsdt(amount) {
+      showNotification(`BUYING ${amount} EMBER WITH USDT`);
+      buyEmber(amount);
     }
 
     function buyEmber(amount) {
@@ -305,26 +319,25 @@
       current += amount;
       localStorage.setItem('ember_balance', current);
       updateEmberBalanceUI();
-      showNotification(`+${amount} EMBER ADDED`);
     }
 
-    // --- Event Listeners ---
     accessBtn.addEventListener('click', () => {
       haptic('heavy');
       showNotification("PROCESSING ACCESS...");
-
       setTimeout(() => {
-        const mockAddress = "0x" + Math.random().toString(16).substr(2, 40);
-        grantAccessAndConnectWallet(mockAddress);
+        grantAccessAndConnectWallet();
       }, 1000);
     });
 
-    document.querySelectorAll('.btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const amount = parseInt(btn.dataset.amount);
-        if (amount) {
-          haptic('light');
-          buyEmber(amount);
+    document.querySelectorAll('.small-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const amount = parseInt(e.target.dataset.amount);
+        const currency = e.target.classList.contains('ton') ? 'TON' : 'USDT';
+        haptic('light');
+        if (currency === 'TON') {
+          buyWithTon(amount);
+        } else {
+          buyWithUsdt(amount);
         }
       });
     });
@@ -334,7 +347,6 @@
       disconnectWallet();
     });
 
-    // --- Темная тема ---
     if (tg && tg.colorScheme === 'dark') {
       document.body.classList.add('dark');
     }
