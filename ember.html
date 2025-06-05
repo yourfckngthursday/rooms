@@ -278,21 +278,25 @@
 
     async function grantAccessAndConnectWallet() {
       const connector = new tonconnect_sdk.TonConnect();
-      const connectRequest = await connector.connect({
-        bridgeUrl: 'https://bridge.tonapi.io/bridge', 
-        manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json' 
-      });
+      try {
+        await connector.connect({
+          bridgeUrl: 'https://bridge.tonapi.io/bridge', 
+          manifestUrl: 'https://yourdomain.com/tonconnect-manifest.json' 
+        });
 
-      const walletInfo = await connector.walletInfo();
-
-      if (walletInfo && walletInfo.account.address) {
-        localStorage.setItem('wallet_connected', 'true');
-        localStorage.setItem('wallet_address', walletInfo.account.address);
-        localStorage.setItem('ember_balance', 10);
-        updateUIAfterConnect();
-        walletAddressDisplay.textContent = walletInfo.account.address;
-        updateEmberBalanceUI();
-        showNotification("ACCESS GRANTED");
+        const walletInfo = await connector.walletInfo();
+        if (walletInfo && walletInfo.account.address) {
+          localStorage.setItem('wallet_connected', 'true');
+          localStorage.setItem('wallet_address', walletInfo.account.address);
+          localStorage.setItem('ember_balance', 10);
+          updateUIAfterConnect();
+          walletAddressDisplay.textContent = walletInfo.account.address;
+          updateEmberBalanceUI();
+          showNotification("ACCESS GRANTED");
+        }
+      } catch (error) {
+        console.error("Ошибка подключения кошелька:", error);
+        showNotification("FAILED TO CONNECT WALLET");
       }
     }
 
